@@ -12,6 +12,10 @@ primary_region = 'iad'
 [env]
   PORT = '8080'
 
+[http_service]
+  auto_stop_machines=false
+  auto_start_machines=false
+
 [[vm]]
   memory = '1gb'
   cpu_kind = 'shared'
