@@ -94,7 +94,7 @@ def get_request(base_url, url_suffix):
 tracemalloc.start()
 
 client = Client()
-client.login(os.environ('ARCHIVE_BOT_HANDLE'), os.environ('ARCHIVE_BOT_PASSWORD'))
+client.login(os.environ.get('ARCHIVE_BOT_HANDLE'), os.environ.get('ARCHIVE_BOT_PASSWORD'))
 
 while True:
     response = client.app.bsky.notification.list_notifications()
