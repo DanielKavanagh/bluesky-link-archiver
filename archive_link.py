@@ -7,12 +7,13 @@ import itertools
 import tracemalloc
 import os
 from time import sleep
+import httpcore
 
 
 ARCHIVE_AVAILABILITY_URL='https://archive.org/wayback/available?url='
 ARCHIVE_SAVE_URL='https://web.archive.org/save/'
 MAX_NUMBER_PER_BATCH = 1000
-FETCH_SLEEP_SECONDS = 10
+FETCH_SLEEP_SECONDS = 15
 
 
 def post_reply_for_mention(mention):
@@ -97,24 +98,29 @@ client = Client()
 client.login(os.environ.get('ARCHIVE_BOT_HANDLE'), os.environ.get('ARCHIVE_BOT_PASSWORD'))
 
 while True:
-    response = client.app.bsky.notification.list_notifications()
-    last_seen_time = client.get_current_time_iso()
-    unread_mentions = [notification for notification in response.notifications 
-                    if notification.reason == 'mention' and notification.is_read == False]
+    
+    try: 
+        response = client.app.bsky.notification.list_notifications()
+        last_seen_time = client.get_current_time_iso()
+        unread_mentions = [notification for notification in response.notifications 
+                        if notification.reason == 'mention' and notification.is_read == False]
 
-    print('Found {0} unread mentions to process, out of {1} total notifications retrieved.'.format(len(unread_mentions), len(response.notifications)))
+        print('Found {0} unread mentions to process, out of {1} total notifications retrieved.'.format(len(unread_mentions), len(response.notifications)))
 
-    for mention in itertools.islice(unread_mentions, MAX_NUMBER_PER_BATCH):
-        post_reply_for_mention(mention)
-        
-        
-    print('Updating notification last_seen time with {0}'.format(last_seen_time))
-    client.app.bsky.notification.update_seen({
-        'seen_at': last_seen_time
-    })
+        for mention in itertools.islice(unread_mentions, MAX_NUMBER_PER_BATCH):
+            post_reply_for_mention(mention)
+            
+            
+        print('Updating notification last_seen time with {0}'.format(last_seen_time))
+        client.app.bsky.notification.update_seen({
+            'seen_at': last_seen_time
+        })
+
+    except httpcore.ReadTimeout:
+        pass
         
     current_mem, peak_mem = tracemalloc.get_traced_memory()
     print('Current memory usage: {0} KiB \nPeak memory usage: {1} KiB'.format(int(current_mem / 1024), int(peak_mem / 1024)))
     tracemalloc.stop()
-    
+
     sleep(FETCH_SLEEP_SECONDS)
